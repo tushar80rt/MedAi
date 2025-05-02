@@ -1,7 +1,8 @@
+
 import os
 import uuid
-from dotenv import load_dotenv
 import streamlit as st
+from dotenv import load_dotenv
 from camel_agents import MedicalReportAssistant
 
 # --------------------------- Initialization ---------------------------
@@ -17,39 +18,21 @@ st.set_page_config(
 
 # --------------------------- UI Setup ---------------------------
 def set_theme():
-    theme = st.radio("🌗 Choose theme:", ["Light", "Dark"], horizontal=True)
-    if theme == "Dark":
-        st.markdown("""
-            <style>
-                [data-testid=stAppViewContainer] {background-color: #121212;}
-                .stTextArea textarea {color: white !important;}
-                .result-box {
-                    padding: 15px; 
-                    border-radius: 10px; 
-                    background: #2d2d2d;
-                    margin-bottom: 20px;
-                }
-                .stMarkdown h3 {
-                    color: #4fc3f7;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-            <style>
-                [data-testid=stAppViewContainer] {background-color: #f5f7fa;}
-                .result-box {
-                    padding: 15px;
-                    border-radius: 10px;
-                    background: #ffffff;
-                    border: 1px solid #e0e0e0;
-                    margin-bottom: 20px;
-                }
-                .stMarkdown h3 {
-                    color: #1976d2;
-                }
-            </style>
-        """, unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+            [data-testid=stAppViewContainer] {background-color: #121212;}
+            .stTextArea textarea {color: white !important;}
+            .result-box {
+                padding: 15px; 
+                border-radius: 10px; 
+                background: #2d2d2d;
+                margin-bottom: 20px;
+            }
+            .stMarkdown h3 {
+                color: #4fc3f7;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
 set_theme()
 
@@ -61,10 +44,21 @@ st.markdown("**World's Most Advanced Medical Report Analyzer**")
 def get_assistant():
     return MedicalReportAssistant()
 
+
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
+
+if "clear_file" not in st.session_state:
+    st.session_state.clear_file = lambda: st.session_state.update(uploaded_file=None)
+
 # File Upload
 with st.sidebar:
     st.subheader("📁 Upload Medical Report")
     uploaded_file = st.file_uploader("", type=["pdf"], label_visibility="collapsed")
+
+    # Clear (Dustbin) Option
+    if uploaded_file is not None:
+        st.sidebar.button("🗑️ Clear Uploaded File", on_click=st.session_state.clear_file)
 
 # Analysis Section
 tab1, tab2 = st.tabs(["🧪 Analyze Report", "ℹ️ About"])
@@ -80,7 +74,6 @@ with tab1:
         else:
             with st.spinner("🧠 Analyzing report with AI..."):
                 try:
-                    # Create temp file with unique name
                     temp_path = f"temp_{uuid.uuid4().hex}.pdf"
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
@@ -89,9 +82,9 @@ with tab1:
                     prompt = query.strip() or "Please analyze this medical report and explain the findings in simple terms."
                     result = assistant.analyze_query(prompt, temp_path)
                     
-                    st.markdown("### 📊 AI Analysis Result")
-                    st.markdown(f'<div class="result-box">{result}</div>', 
-                                unsafe_allow_html=True)
+                    st.markdown("### 🩺 Doctor’s AI Opinion")
+                    st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
+
                     st.success("✅ Analysis completed successfully!")
                 
                 except Exception as e:
@@ -107,7 +100,7 @@ with tab2:
     ## ℹ️ About MedAI Pro
     Advanced medical report analysis powered by:
     - 🧠 CAMEL AI Framework
-    - ⚡ Groq Cloud + Llama3 70B
+    - ⚡ Groq Cloud + Llama 4
     - 🔒 Secure local processing
     
     **Key Features:**
@@ -123,3 +116,4 @@ with tab2:
 
 st.markdown("---")
 st.caption("© 2025 MedAI Pro | For educational and research use only")
+
