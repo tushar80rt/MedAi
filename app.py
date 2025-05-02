@@ -122,4 +122,4 @@ with tab2:
     """)
 
 st.markdown("---")
-st.caption("© 2024 MedAI Pro | For educational and research use only")
+st.caption("© 2025 MedAI Pro | For educational and research use only")
