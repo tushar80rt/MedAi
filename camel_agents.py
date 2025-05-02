@@ -1,5 +1,5 @@
 import os
-import fitz  # PyMuPDF
+import fitz  
 from dotenv import load_dotenv
 from camel.agents import ChatAgent
 from camel.types import RoleType
@@ -14,10 +14,10 @@ class MedicalReportAssistant:
         if not self.api_key:
             raise ValueError("❌ GROQ_API_KEY missing in api.env")
 
-        # Model for LLAMA 3, but no need to pass api_key here
+        
         self.model = ModelFactory.create(
             model_platform=ModelPlatformType.GROQ,
-            model_type="llama-3.1-8b-instant"  # LLAMA 3 model
+            model_type="meta-llama/llama-4-maverick-17b-128e-instruct"    # llama 4
         )
 
     def extract_text(self, pdf_input):
@@ -41,7 +41,7 @@ class MedicalReportAssistant:
 1. Key findings
 2. Potential concerns
 3. Recommendations""",
-                    meta_dict={}  # Add additional meta information if needed
+                    meta_dict={}  
                 ),
                 model=self.model
             )
@@ -51,7 +51,7 @@ class MedicalReportAssistant:
                 report_text = self.extract_text(pdf_input)
                 input_content += f"Report Contents:\n{report_text[:5000]}"
 
-            # Send query and report to Doctor agent
+            
             response = doctor.step(BaseMessage(
                 role_name="Patient",
                 role_type=RoleType.USER,
