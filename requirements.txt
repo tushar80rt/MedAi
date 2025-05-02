@@ -1,0 +1,5 @@
+streamlit>=1.32
+python-dotenv>=1.0
+groq>=0.3
+camel-ai>=0.1
+pymupdf>=1.23
