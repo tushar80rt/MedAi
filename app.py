@@ -57,7 +57,7 @@ set_theme()
 st.title("⚡ MedAI Pro")
 st.markdown("**World's Most Advanced Medical Report Analyzer**")
 
-# @st.cache_resource
+
 def get_assistant():
     return MedicalReportAssistant()
 
