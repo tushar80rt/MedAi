@@ -42,10 +42,14 @@ Here are some key UI snapshots of the application in action:
 
 1. **Clone this repository**
 
-camel-ai[all]    
-PyMuPDF==1.23.9         
-python-dotenv==1.0.1        
+camel-ai[all]  
+
+PyMuPDF==1.23.9   
+
+python-dotenv==1.0.1 
+
 streamlit
+
 gTTS==2.5.1  
 
 2. **Install dependencies**
