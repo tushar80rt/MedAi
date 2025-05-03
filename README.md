@@ -50,7 +50,9 @@ python-dotenv==1.0.1
 
 streamlit
 
-gTTS==2.5.1  
+gTTS==2.5.1 
+
+groq
 
 2. **Install dependencies**
 
