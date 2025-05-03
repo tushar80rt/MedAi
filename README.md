@@ -40,8 +40,6 @@ Here are some key UI snapshots of the application in action:
 
 ## 📦 Installation
 
-1. **Clone this repository**
-
 camel-ai[all]  
 
 PyMuPDF==1.23.9   
