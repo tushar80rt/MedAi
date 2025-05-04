@@ -1,186 +1,278 @@
-
 import os
 import uuid
-import streamlit as st
-from dotenv import load_dotenv
-from camel_agents import MedicalReportAssistant
-from gtts import gTTS
+import tempfile
 import threading
 import re
 
-# --------------------------- Initialization ---------------------------
+import streamlit as st
+from dotenv import load_dotenv
+from gtts import gTTS
+from pdf2image import convert_from_bytes
+
+from camel_agents import MedicalReportAssistant
+
+# ---------------------------
+# 1. Load environment
+# ---------------------------
 load_dotenv("api.env")
 
-# --------------------------- Page Config ---------------------------
+# ---------------------------
+# 2. Session state init
+# ---------------------------
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
+if "file_bytes" not in st.session_state:
+    st.session_state.file_bytes = None
+
+def clear_file():
+    """Reset stored file in session state."""
+    st.session_state.uploaded_file = None
+    st.session_state.file_bytes = None
+
+st.session_state.clear_file = clear_file
+
+# ---------------------------
+# 3. Page configuration
+# ---------------------------
 st.set_page_config(
-    page_title="⚡ MedAI Pro",
+    page_title="MedAI Pro ⚡",
     page_icon="⚕️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --------------------------- UI Setup ---------------------------
+# ---------------------------
+# 4. Custom CSS & Header
+# ---------------------------
+st.markdown("""
+<style>
+  /* App background & text styling */
+  [data-testid=stAppViewContainer] {
+      background-color: #121212;
+  }
+  .stTextArea textarea {
+      color: white !important;
+  }
+
+  /* Header styles */
+  .header-container {
+      text-align: center;
+      margin: 2rem 0;
+  }
+  .header-container .title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      vertical-align: middle;
+      margin: 0 1rem;
+  }
+  .header-container img {
+      vertical-align: middle;
+      margin: 0 1rem;
+  }
+
+  /* Result box styling */
+  .result-box {
+      background: #1e1e1e;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+  }
+  .result-box h1, .result-box h2, .result-box h3, .result-box h4 {
+      color: #ffffff;
+  }
+  .result-box p, .result-box ul, .result-box ol, .result-box li {
+      color: #e0e0e0;
+  }
+
+  /* Audio container styling */
+  .audio-container {
+      background: #2d2d2d;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 30px;
+      text-align: center;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  .audio-container h4 {
+      color: #4fc3f7;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+  }
+  .audio-container audio {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #4fc3f7;
+  }
+  .audio-btn {
+      background-color: #4fc3f7;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1.2em;
+      cursor: pointer;
+      margin-top: 10px;
+  }
+  .audio-btn:hover {
+      background-color: #1976d2;
+  }
+</style>
+
+<div class="header-container">
+    <span class="title">⚡ MedAI Pro</span>
+</div>
+<div class="header-container">
+    <img src="https://repository-images.githubusercontent.com/615510678/93880a8f-edb6-4ef2-88d1-abff2651702e" width="120" alt="Camel AI"/>
+    <img src="https://www.ciscoinvestments.com/assets/logos/groq-logo.png" width="120" alt="Together"/>
+</div>
+""", unsafe_allow_html=True)
+
+# ---------------------------
+# 5. Theme helper
+# ---------------------------
 def set_theme():
-    st.markdown("""
-        <style>
-            [data-testid=stAppViewContainer] {background-color: #121212;}
-            .stTextArea textarea {color: white !important;}
-            .result-box {
-                padding: 15px; 
-                border-radius: 10px; 
-                background: #2d2d2d;
-                margin-bottom: 20px;
-            }
-            .stMarkdown h3 {
-                color: #4fc3f7;
-            }
-            .audio-container {
-                background: #2d2d2d;
-                padding: 20px;
-                border-radius: 10px;
-                margin-top: 30px;
-                text-align: center;
-                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            }
-            .audio-container h4 {
-                color: #4fc3f7;
-                margin-bottom: 15px;
-                font-size: 1.3em;
-            }
-            .audio-container audio {
-                width: 100%;
-                border-radius: 10px;
-                border: 1px solid #4fc3f7;
-            }
-            .audio-btn {
-                background-color: #4fc3f7;
-                color: white;
-                padding: 10px 20px;
-                border: none;
-                border-radius: 5px;
-                font-size: 1.2em;
-                cursor: pointer;
-                margin-top: 10px;
-            }
-            .audio-btn:hover {
-                background-color: #1976d2;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    """Additional theme settings (if needed)."""
+    # Placeholder for any Python-based theme logic
+    pass
 
 set_theme()
 
-# --------------------------- Main App ---------------------------
-st.title("⚡ MedAI Pro")
-st.markdown("**World's Most Advanced Medical Report Analyzer**")
-
-
-def get_assistant():
-    return MedicalReportAssistant()
-
-# Initialize session state for file and clear_file function
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
-
-if "clear_file" not in st.session_state:
-    st.session_state.clear_file = lambda: st.session_state.update(uploaded_file=None)
-
-# File Upload
+# ---------------------------
+# 6. Sidebar: File upload
+# ---------------------------
 with st.sidebar:
     st.subheader("📁 Upload Medical Report")
-    uploaded_file = st.file_uploader("", type=["pdf"], label_visibility="collapsed")
+    uploaded = st.file_uploader(
+        label="", type=["pdf"], label_visibility="collapsed"
+    )
 
-    # Clear (Dustbin) Option
-    if uploaded_file is not None:
-        st.sidebar.button("🗑️ Clear Uploaded File", on_click=st.session_state.clear_file)
+    if uploaded:
+        # Store file bytes in session
+        st.session_state.uploaded_file = uploaded
+        st.session_state.file_bytes = uploaded.getbuffer()
 
-# Function to clean the text (remove symbols)
-def clean_text(text):
-    # Remove any non-alphanumeric characters (symbols, emojis)
-    cleaned_text = re.sub(r'[^\w\s]', '', text)  # This removes special characters and symbols
-    return cleaned_text
+        # Button to clear upload
+        st.button("🗑️ Clear Uploaded File", on_click=st.session_state.clear_file)
 
-# Function to generate audio
-def generate_audio(result_text):
-    cleaned_text = clean_text(result_text)  # Clean the text before passing to TTS
-    audio_path = "temp_result_audio.mp3"  # Saving the audio with a fixed path
-    tts = gTTS(text=cleaned_text, lang='en')
+        # PDF preview expander
+        with st.expander("📄 Preview Report Pages", expanded=False):
+            try:
+                images = convert_from_bytes(
+                    st.session_state.file_bytes, size=(300, None)
+                )
+                for i, img in enumerate(images, start=1):
+                    st.image(img, caption=f"Page {i}", use_container_width=True)
+                st.success(f"✅ Showing all {len(images)} pages.")
+            except Exception as e:
+                st.error(f"Could not preview PDF: {e}")
+
+# ---------------------------
+# 7. Utility functions
+# ---------------------------
+def clean_text(text: str) -> str:
+    """Remove non-alphanumeric characters for TTS."""
+    return re.sub(r"[^\w\s]", "", text)
+
+def generate_audio(text: str) -> str:
+    """
+    Generate an MP3 from cleaned text via gTTS.
+    Returns the path to the audio file.
+    """
+    cleaned = clean_text(text)
+    audio_path = "temp_result_audio.mp3"
+    tts = gTTS(text=cleaned, lang="en")
     tts.save(audio_path)
     return audio_path
 
-# Analysis Section
-tab1, tab2 = st.tabs(["🧪 Analyze Report", "ℹ️ About"])
+def get_assistant() -> MedicalReportAssistant:
+    """Instantiate and return the medical report assistant."""
+    return MedicalReportAssistant()
+
+# ---------------------------
+# 8. Main interface: Tabs
+# ---------------------------
+tab1, tab2 = st.tabs(["Analyze Report", "ℹ️ About"])
 
 with tab1:
-    query = st.text_area("🩺 Enter your query (or leave blank to auto-analyze):", 
-                        height=120,
-                        placeholder="e.g. Explain my blood test results")
-    
+    # User query input
+    query = st.text_area(
+        "Enter your query (or leave blank to auto-analyze):",
+        height=120,
+        placeholder="e.g. Explain my blood test results"
+    )
+
     if st.button("🚀 Start Analysis", type="primary", use_container_width=True):
-        if not uploaded_file:
+        if not st.session_state.uploaded_file:
             st.error("❌ Please upload a PDF medical report first.")
         else:
             with st.spinner("🧠 Analyzing report with AI..."):
                 try:
-                    # Create temp file with unique name
-                    temp_path = f"temp_{uuid.uuid4().hex}.pdf"
-                    with open(temp_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    
-                    assistant = MedicalReportAssistant()
-                    prompt = query.strip() or "Please analyze this medical report and explain the findings in simple terms."
-                    result = assistant.analyze_query(prompt, temp_path)
+                    # Write temp PDF file
+                    temp_pdf = f"temp_{uuid.uuid4().hex}.pdf"
+                    with open(temp_pdf, "wb") as f:
+                        f.write(st.session_state.file_bytes)
 
-                    audio_path = generate_audio(result)  # Save audio file
+                    # Analyze via assistant
+                    assistant = get_assistant()
+                    prompt = query.strip() or (
+                        "Please analyze this medical report and explain "
+                        "the findings in simple terms."
+                    )
+                    result = assistant.analyze_query(prompt, temp_pdf)
 
-
-                    # Display audio player using st.audio inside a professional UI container
+                    # Generate and display audio
+                    audio_path = generate_audio(result)
                     st.markdown('<div class="audio-container">', unsafe_allow_html=True)
-                    st.markdown('<h4>🔊 Listen to Doctor\'s AI Opinion:</h4>', unsafe_allow_html=True)
-                    st.audio(audio_path)  # Use Streamlit's built-in audio player
+                    st.markdown(
+                        '<h4>🔊 Listen to Doctor\'s AI Opinion:</h4>',
+                        unsafe_allow_html=True
+                    )
+                    st.audio(audio_path)
                     st.markdown('</div>', unsafe_allow_html=True)
 
-                    # Display Text Result
+                    # Display text result
                     st.markdown("### 🩺 Doctor’s AI Opinion")
-                    st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
-
+                    st.markdown(
+                        f'<div class="result-box">{result}</div>',
+                        unsafe_allow_html=True
+                    )
                     st.success("✅ Analysis completed successfully!")
-                    
-             
 
                 except Exception as e:
-                    st.error(f"⚠️ Error: {str(e)}")
+                    st.error(f"⚠️ Error: {e}")
                     st.error("Please try again with a different PDF file")
-
                 finally:
-                    if os.path.exists(temp_path):
-                        os.remove(temp_path)
+                    # Clean up temp file
+                    if os.path.exists(temp_pdf):
+                        os.remove(temp_pdf)
 
 with tab2:
+    # About section
     st.markdown("""
-    ## ℹ️ About MedAI Pro
-    Advanced medical report analysis powered by:
-    - 🐫 CAMEL AI Framework
-    - ⚡ Groq Cloud + Llama 4
-    - 🔒 Secure local processing
-    
-    **Key Features:**
-    - Instant PDF report understanding
-    - Doctor-level analysis
-    - Privacy-focused (no data stored)
-    - **Audio-enabled**: Listen to the doctor's AI-generated analysis instead of reading it. The audio is powered by **Text-to-Speech** (TTS) technology, allowing you to hear the explanation of your medical report directly.
-    
-    **How it works:**
-    1. Upload your medical report (PDF)
-    2. Ask specific questions or get automatic analysis
-    3. Receive easy-to-understand explanations both as text and audio
-    
-    **Audio Feature**:
-    - Once the analysis is complete, you can click the **"Listen to Doctor's AI Opinion"** button to hear the results, making it even easier to understand your medical report.
+    ## About MedAI Pro
+
+    MedAI Pro leverages advanced AI to transform complex medical reports 
+    into clear, actionable insights in seconds.
+
+    **Key Capabilities**
+    - Comprehensive PDF report interpretation
+    - Natural language explanations
+    - Integrated audio playback for auditory learners
+    - Privacy-first design—no data is stored
+
+    **How It Works**
+    1. **Upload** your medical report (PDF)
+    2. **Query** specific points or run a full analysis
+    3. **Review** both text and audio summaries
+
+    Built on the [CAMEL-AI](https://www.camel-ai.org/) framework & 
+    [Groq Inference](https://groq.com/) and powered by secure, on-device 
+    processing to ensure patient confidentiality.
     """)
 
+# ---------------------------
+# 9. Footer
+# ---------------------------
 st.markdown("---")
 st.caption("© 2025 MedAI Pro | For educational and research use only")
-
-
-
