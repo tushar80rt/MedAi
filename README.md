@@ -9,11 +9,12 @@
 
 Here are some key UI snapshots of the application in action:
 
-![Screenshot 1](screenshot_1.png) ![screenshot_1](https://github.com/user-attachments/assets/165b443f-0683-45ff-a675-26ab9d904f5d)
+![Screenshot 1](screenshot_1.png) <img width="845" alt="topview" src="https://github.com/user-attachments/assets/d070eaa0-e999-43af-82d9-70f3435dd391" />
 
-![Screenshot 2](screenshot_2.png)   ![screenshot_2](https://github.com/user-attachments/assets/6e9745a6-efd4-4fae-ba38-00d8501c3443)
+![Screenshot 2](screenshot_2.png)   <img width="846" alt="secondview" src="https://github.com/user-attachments/assets/5f27ae1f-4d1f-4080-9145-17cda831ce52" />
 
-![Screenshot 3](screenshot_3.png)    ![screenshot_3](https://github.com/user-attachments/assets/ea71355f-4af0-43fe-b909-76064076fb4f)
+![Screenshot 3](screenshot_3.png)   <img width="842" alt="thirdview" src="https://github.com/user-attachments/assets/ed5ac83f-c511-4281-ab92-a2af6ec15795" />
+
 
 
 ---
