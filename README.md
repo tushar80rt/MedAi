@@ -11,7 +11,7 @@ You have one question:
 
 But you're stuck scanning through paragraphs.
 
-What if you could just ask your question… and get the answer in seconds?
+"Imagine asking a question and receiving the answer in just seconds—delivered seamlessly in both text and audio formats. Instant, accurate, and fully interactive!"
 
 🔥 Meet Med-AI
 Med-AI is a blazing-fast PDF Q&A assistant for medical documents.
