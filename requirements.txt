@@ -1,5 +1,6 @@
+camel-ai[all]
+PyMuPDF==1.23.9
+python-dotenv==1.0.1
 streamlit
-python-dotenv
+gTTS==2.5.1
 groq
-camel-ai
-pymupdf
